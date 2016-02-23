@@ -1,11 +1,23 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
-```{r setup,results="hide"}
+# Reproducible Research: Peer Assessment 1
+
+```r
 library (dplyr)
+```
+
+```
+## 
+## Attaching package: 'dplyr'
+## 
+## The following object is masked from 'package:stats':
+## 
+##     filter
+## 
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+```
+
+```r
 library(lubridate)
 library(ggplot2)
 options(digits = 2, scipen=999)
@@ -13,10 +25,21 @@ options(digits = 2, scipen=999)
   
     
 ## Loading and preprocessing the data
-```{r dataload}
+
+```r
 unzip("activity.zip")
 act <- read.csv(file = "activity.csv",stringsAsFactors = FALSE, na.strings="NA")
 str(act)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : chr  "2012-10-01" "2012-10-01" "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
+
+```r
 act <-tbl_df(act)
 
 ## Parse dates using lubridate, sort
@@ -24,7 +47,8 @@ act <- mutate(act, date = ymd(date))
 act <- arrange(act, date, interval)
 ```
 ## What is mean total number of steps taken per day?
-```{r calmean}
+
+```r
 act_sum <- 
         act %>%
         group_by(date) %>%
@@ -39,15 +63,21 @@ with(act_sum,{
         )
 }
 )
+```
+
+![](PA1_template_files/figure-html/calmean-1.png) 
+
+```r
 daymean <- mean(act_sum$daytot,na.rm = TRUE)
 daymedian <- median(act_sum$daytot, na.rm = TRUE)
 ```
   
-The mean and median of the total number of steps taken per day are **`r daymean`** and **`r daymedian`** respectively.
+The mean and median of the total number of steps taken per day are **9354.23** and **10395** respectively.
   
 ## What is the average daily activity pattern?
 
-```{r ts}
+
+```r
 act_ts <- 
         act %>%
         group_by(interval) %>%
@@ -62,7 +92,11 @@ with(act_ts,{
         )
 }
 )
+```
 
+![](PA1_template_files/figure-html/ts-1.png) 
+
+```r
 interval_max_start <-
         act_ts %>%
         filter(stepmean==max(act_ts$stepmean)) %>%
@@ -73,20 +107,21 @@ interval_max_end <- interval_max_start + 5
 
 interval_max_start <- paste("0",interval_max_start, sep="")
 interval_max_end <- paste("0",interval_max_end, sep="")
-
 ```
 
-The 5-minute interval **from `r interval_max_start` hrs to `r interval_max_end` hrs** contains the maximum number of steps on average across all the days in the dataset.
+The 5-minute interval **from 0835 hrs to 0840 hrs** contains the maximum number of steps on average across all the days in the dataset.
 
 ## Imputing missing values
-```{r calmissing}
+
+```r
 missing <- sum(is.na(act))
 ```
-The dataset contains **`r missing`** missing values.  
+The dataset contains **2304** missing values.  
   
 I choose to impute missing values with the mean number of steps for the 5-min interval, averaged across all days. The number of steps for each interval is likely to be determined to some degree by habit / routine. For example, the person is likely to be asleep at 3am daily, leading to a zero or low number of steps taken.  
 
-```{r impute}
+
+```r
 act_impute <- merge(act,act_ts,by="interval")
 act_impute <- mutate(act_impute,steps = ifelse(is.na(steps),stepmean,steps))
 
@@ -104,14 +139,20 @@ with(act_impute_sum,{
         )
 }
 )
+```
+
+![](PA1_template_files/figure-html/impute-1.png) 
+
+```r
 daymean_impute <- mean(act_impute_sum$daytot)
 daymedian_impute <- median(act_impute_sum$daytot)
 ```
   
-Without imputing values, the mean and median of the total number of steps taken per day is **`r daymean`** and **`r daymedian`** respectively. With missing values imputed, the mean and median are **`r daymean_impute`** and **`r daymedian_impute`** respectively. The median is now equal to the mean.
+Without imputing values, the mean and median of the total number of steps taken per day is **9354.23** and **10395** respectively. With missing values imputed, the mean and median are **10766.19** and **10766.19** respectively. The median is now equal to the mean.
 
 ## Are there differences in activity patterns between weekdays and weekends?
-```{r weekdayweekend}
+
+```r
 act_daytype_ts <- 
         act_impute %>%
         mutate(day = weekdays(date),type = ifelse(day =="Saturday" | day == "Sunday","weekend","weekday")) %>%
@@ -133,8 +174,9 @@ plotts <- ggplot(act_daytype_ts , aes(interval, stepmean)) +
 
 
 print(plotts)
-
 ```
+
+![](PA1_template_files/figure-html/weekdayweekend-1.png) 
 
 Comparing average steps per interval on weekdays and weekends, I make a few observations:  
 1. Between midnight and about 5am, the person takes minimal steps. This applies to both weekdays and weekends.  
